@@ -8,6 +8,7 @@ Game::Game(Player& player, Camera& camera, Level& level)
 void Game::run(float deltaTime, RenderWindow& window, Input& input) {
     if (input.isKeyTriggered(Keyboard::Scancode::Escape)) {
         pause = !pause;
+        pauseMenu.resetCursor();
     }
 
     if (!pause) {
@@ -19,7 +20,7 @@ void Game::run(float deltaTime, RenderWindow& window, Input& input) {
     window.draw(level);
     window.draw(player.getSprite());
     window.draw(player.getHitbox());
-
+    
     if (pause) {
         pauseMenu.update(deltaTime, pause, player, Vector2f(level.getSpawnPosition()), input, window);
     }

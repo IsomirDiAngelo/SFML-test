@@ -21,6 +21,7 @@ class PauseMenu {
         PauseMenu();
         void update(float deltaTime, bool& pause, Player& player, 
             Vector2f levelSpawnPosition, Input& input, RenderWindow& window);
+        void resetCursor();
 };
 
 #endif

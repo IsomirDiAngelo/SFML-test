@@ -28,15 +28,14 @@ void PauseMenu::update(float deltaTime, bool& pause, Player& player,
         Vector2f levelSpawnPosition, Input& input, RenderWindow& window) {
 
     if (input.isKeyTriggered(Keyboard::Scancode::Space) || input.isKeyTriggered(Keyboard::Scancode::Enter)) {
+        bool deathAnimationFinished = false;
         switch (pauseMenuIndex) {
             case 1:
                 window.close();
                 break;
             case 0:
+                player.kill();
                 pause = false;
-                player.getSprite().setOrigin({0, 0});
-                player.getSprite().setPosition(levelSpawnPosition);
-                player.resetSpeed();
                 break;
             default:
                 pause = false;
@@ -63,4 +62,8 @@ void PauseMenu::update(float deltaTime, bool& pause, Player& player,
     window.draw(retryButton);
     window.draw(quitButton);
     window.draw(circleCursor);
+}
+
+void PauseMenu::resetCursor() {
+    pauseMenuIndex = -1;
 }
