@@ -16,6 +16,7 @@ private:
     int y;
     int tileType;
     bool solid;
+    bool dangerous;
 
 public:
     Tile(int x, int y, int tileType);
@@ -26,6 +27,7 @@ public:
     int getY() const;
     int getTileType() const;
     bool isSolid() const;
+    bool isDangerous() const;
     sf::RectangleShape& getHitbox();
 };
 

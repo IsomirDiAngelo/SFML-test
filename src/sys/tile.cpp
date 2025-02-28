@@ -3,13 +3,19 @@
 Tile::Tile(int x, int y, int tileType) {
     this->x = x;
     this->y = y;
-    this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y});
-    this->hitbox.setPosition({x * TILE_SIZE.x, y * TILE_SIZE.y});
-    this->hitbox.setFillColor(Color::Transparent); // Invisible
     this->tileType = tileType;
     this->solid = collisionTable[tileType];
+    this->dangerous = dangerTable[tileType];
+    if (!dangerous) {
+        this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y});
+        this->hitbox.setPosition({x * TILE_SIZE.x, y * TILE_SIZE.y});
+    } else {
+        this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y - 4});
+        this->hitbox.setPosition({x * TILE_SIZE.x, y * TILE_SIZE.y + 4});
+    }
+    this->hitbox.setFillColor(Color::Transparent); // Invisible
     
-    if (solid && DEBUG) {
+    if ((solid || dangerous) && DEBUG) {
         this->hitbox.setOutlineThickness(-1);
         this->hitbox.setOutlineColor(sf::Color::Red);
     }
@@ -40,6 +46,10 @@ int Tile::getTileType() const {
 
 bool Tile::isSolid() const {
     return solid;
+}
+
+bool Tile::isDangerous() const {
+    return dangerous;
 }
 
 sf::RectangleShape& Tile::getHitbox()  {

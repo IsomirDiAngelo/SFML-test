@@ -20,6 +20,16 @@ void Game::run(float deltaTime, RenderWindow& window, Input& input) {
     window.draw(level);
     window.draw(player.getSprite());
     window.draw(player.getHitbox());
+
+    if (DEBUG) {
+        std::vector<std::vector<Tile>> tiles = level.getTiles();
+        Vector2u levelSize = level.getSize();
+        for (int i = 0; i < levelSize.x; i++) {
+            for (int j = 0; j < levelSize.y; j++) {
+                window.draw(tiles[i][j].getHitbox());
+            }
+        }
+    }
     
     if (pause) {
         pauseMenu.update(deltaTime, pause, player, Vector2f(level.getSpawnPosition()), input, window);

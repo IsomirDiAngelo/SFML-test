@@ -46,11 +46,12 @@ class Player {
     
         bool groundedState = false;
         bool dyingState = false;
+        bool landingState = false;
 
         void updateHitbox();
         void applyFriction(float deltaTime, float factor);
-        void updateGroundedState(std::vector<std::vector<Tile>>& tiles, Vector2u levelSize);
-        bool animate(float deltaTime, float timePerFrame, float offset, int totalFrames);
+        void updateGroundedState(float deltaTime, std::vector<std::vector<Tile>>& tiles, Vector2u levelSize);
+        bool animate(float deltaTime, float timePerFrame, float offsetX, float offsetY, int totalFrames, bool repeat);
 
         bool checkCollision(RectangleShape& hitboxA, RectangleShape& hitboxB); // This one should be elsewhere probably
 
@@ -59,8 +60,9 @@ class Player {
         RectangleShape& getHitbox();
         Sprite& getSprite();
         void update(float deltaTime, Level& level, Input& input);
-        void updatePosition(float dx, float dy, Level& level);
+        void updatePosition(float deltaTime, float dx, float dy, Level& level);
         void resetSpeed();
+        void resetAnimation();
         void kill();
 };
 

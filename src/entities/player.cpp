@@ -35,16 +35,23 @@ Sprite& Player::getSprite() {
 void Player::update(float deltaTime, Level& level, Input& input) {
     // Player is dying
     if (dyingState) {
-        if (!animate(deltaTime, 0.2f, 6 * 32, 3)) {
+        if (!animate(deltaTime, 0.2f, 0, 6 * 32, 3, false)) {
             return;
         } else {
             sprite.setOrigin({0, 0});
+            sprite.setScale({1, 1});
             sprite.setPosition(Vector2f(level.getSpawnPosition()));
             resetSpeed();
             dyingState = false;
         }
     }
 
+    // Player is landing from a fall
+    if (landingState) {
+        if (animate(deltaTime, 0.1f, 4 * 32, 5 * 32, 4, false)) {
+            landingState = false;
+        }
+    }
 
     if (Keyboard::isKeyPressed(Keyboard::Key::Right)) {
         // Sprite is facing right
@@ -86,7 +93,14 @@ void Player::update(float deltaTime, Level& level, Input& input) {
     // Falling
     if (!groundedState) {
         // Increase gravity upon falling
-        float accelerationMultiplier = speed.y < 0 ? 1.0f : 1.5f;
+        float accelerationMultiplier;
+        if (speed.y < 0) {
+            accelerationMultiplier = 1.0f;
+            animate(deltaTime, 0.2f, 0, 5 * 32, 5, false);
+        } else {
+            accelerationMultiplier = 1.5f;
+            sprite.setTextureRect(IntRect({5 * 32, 5 * 32}, {frameWidth, frameHeight}));
+        }
         speed.y += accelerationMultiplier * acceleration.y * deltaTime;
     }
 
@@ -108,16 +122,18 @@ void Player::update(float deltaTime, Level& level, Input& input) {
         speed.x = -maxSpeed; 
     }
 
-    if (abs(speed.x) > 0 && abs(speed.x) <= MAX_SPEED_WALKING + 25.0f) {
-        animate(deltaTime, 0.1f, SPRITE_OFFSET_WALKING, WALKING_FRAMES);
-    } else if (abs(speed.x) > MAX_SPEED_WALKING + 25.0f) {
-        animate(deltaTime, 0.1f, SPRITE_OFFSET_RUNNING, RUNNING_FRAMES);
-    } else if (abs(speed.x) == 0) {
-        currentFrame = 0;
-        sprite.setTextureRect(IntRect({0, 0}, {frameWidth, frameHeight}));
+    if (groundedState && !landingState) {
+        if (abs(speed.x) > 0 && abs(speed.x) <= MAX_SPEED_WALKING + 25.0f) {
+            animate(deltaTime, 0.1f, 0, SPRITE_OFFSET_WALKING, WALKING_FRAMES, true);
+        } else if (abs(speed.x) > MAX_SPEED_WALKING + 25.0f) {
+            animate(deltaTime, 0.1f, 0, SPRITE_OFFSET_RUNNING, RUNNING_FRAMES, true);
+        } else if (abs(speed.x) == 0) {
+            currentFrame = 0;
+            sprite.setTextureRect(IntRect({0, 0}, {frameWidth, frameHeight}));
+        }
     }
 
-    updatePosition(speed.x * deltaTime, speed.y * deltaTime, level);
+    updatePosition(deltaTime, speed.x * deltaTime, speed.y * deltaTime, level);
 }
 
 /**
@@ -126,7 +142,7 @@ void Player::update(float deltaTime, Level& level, Input& input) {
  * 
  * More robust than v1
  */
-void Player::updatePosition(float dx, float dy, Level& level) {
+void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
     Vector2f remainder = {};
 
     std::vector<std::vector<Tile>> tiles = level.getTiles();
@@ -150,10 +166,16 @@ void Player::updatePosition(float dx, float dy, Level& level) {
                         if (x < 0 || y < 0 || x >= levelSize.x || y >= levelSize.y) {
                             continue;
                         }
-                        if (tiles[x][y].isSolid() && checkCollision(hitbox, tiles[x][y].getHitbox())) {
-                            if (axis == 0) speed.x = 0;
-                            if (axis == 1) speed.y = 0;
-                            return;
+                        if (checkCollision(hitbox, tiles[x][y].getHitbox())) {
+                            if (tiles[x][y].isSolid()) {
+                                if (axis == 0) speed.x = 0;
+                                if (axis == 1) speed.y = 0;
+                                return;
+                            }
+                            if (tiles[x][y].isDangerous()) {
+                                kill();
+                                return;
+                            }
                         }
                     }
                 }
@@ -179,13 +201,13 @@ void Player::updatePosition(float dx, float dy, Level& level) {
     movePlayer(moveX, 0);
     updateHitbox();
 
-    updateGroundedState(tiles, levelSize);
+    updateGroundedState(deltaTime, tiles, levelSize);
 }
 
 /**
  * Update player grounded state by checking if no tile below us is solid and colliding with the player's feet
  */
-void Player::updateGroundedState(std::vector<std::vector<Tile>>& tiles, Vector2u levelSize) {
+void Player::updateGroundedState(float deltaTime, std::vector<std::vector<Tile>>& tiles, Vector2u levelSize) {
     int playerGridPositonX = hitbox.getPosition().x / TILE_SIZE.x;
     int playerGridPositonY = hitbox.getPosition().y / TILE_SIZE.y;
     int y = playerGridPositonY + 2; // The range of tiles below the player is at Y + 2 because the player is 2 tiles tall
@@ -198,6 +220,10 @@ void Player::updateGroundedState(std::vector<std::vector<Tile>>& tiles, Vector2u
             continue;
         }
         if (tiles[x][y].isSolid() && checkCollision(feetHitbox, tiles[x][y].getHitbox())) {
+            if (groundedState == false) {
+                resetAnimation();
+                landingState = true;
+            }
             groundedState = true;
             return;
         }
@@ -205,6 +231,9 @@ void Player::updateGroundedState(std::vector<std::vector<Tile>>& tiles, Vector2u
 
     // Keep in memory the last value of speed.x before jumping or falling off a ledge
     airboneXSpeedSnapshot = speed.x;
+    if (groundedState == true) {
+        resetAnimation();
+    }
     groundedState = false;
 }
 
@@ -216,19 +245,21 @@ void Player::updateHitbox() {
  * Animate player sprite
  * Returns true when the animation is over
  */
-bool Player::animate(float deltaTime, float timePerFrame, float offset, int totalFrames) {
+bool Player::animate(float deltaTime, float timePerFrame, float offsetX, float offsetY, int totalFrames, bool repeat) {
     animationTimer += deltaTime;
     totalAnimationTimer += deltaTime;
+    
+    if (totalAnimationTimer >= totalFrames * timePerFrame) {
+        totalAnimationTimer = 0.0f;
+        if (!repeat) {
+            return true;
+        }
+    }
 
     if (animationTimer > timePerFrame) {
         currentFrame = (currentFrame + 1) % totalFrames;
-        sprite.setTextureRect(IntRect({currentFrame * frameWidth, offset}, {frameWidth, frameHeight}));
+        sprite.setTextureRect(IntRect({currentFrame * frameWidth + offsetX, offsetY}, {frameWidth, frameHeight}));
         animationTimer = 0.0f;
-    }
-
-    if (totalAnimationTimer >= totalFrames * timePerFrame) {
-        totalAnimationTimer = 0.0f;
-        return true;
     }
 
     return false;
@@ -256,6 +287,13 @@ void Player::resetSpeed() {
     speed = Vector2f{0, 0};
 }
 
+void Player::resetAnimation() {
+    currentFrame = 0;
+    animationTimer = 0.0f;
+    totalAnimationTimer = 0.0f;
+}
+
 void Player::kill() {
+    resetAnimation();
     dyingState = true;
 }
