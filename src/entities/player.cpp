@@ -42,6 +42,7 @@ void Player::update(float deltaTime, Level& level, Input& input) {
             sprite.setScale({1, 1});
             sprite.setPosition(Vector2f(level.getSpawnPosition()));
             resetSpeed();
+            resetAnimation();
             dyingState = false;
         }
     }
@@ -49,6 +50,7 @@ void Player::update(float deltaTime, Level& level, Input& input) {
     // Player is landing from a fall
     if (landingState) {
         if (animate(deltaTime, 0.1f, 4 * 32, 5 * 32, 4, false)) {
+            resetAnimation();
             landingState = false;
         }
     }
@@ -128,7 +130,7 @@ void Player::update(float deltaTime, Level& level, Input& input) {
         } else if (abs(speed.x) > MAX_SPEED_WALKING + 25.0f) {
             animate(deltaTime, 0.1f, 0, SPRITE_OFFSET_RUNNING, RUNNING_FRAMES, true);
         } else if (abs(speed.x) == 0) {
-            currentFrame = 0;
+            resetAnimation();
             sprite.setTextureRect(IntRect({0, 0}, {frameWidth, frameHeight}));
         }
     }
