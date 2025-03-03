@@ -12,7 +12,7 @@
 
 #define PLAYER_SPRITE_FILENAME "assets/characters/hooded protagonist penzilla.png"
 
-constexpr Vector2i PLAYER_SPRITE_SIZE {256, 288};
+constexpr Vector2i PLAYER_SPRITE_SIZE {256, 320};
 
 constexpr Vector2f HITBOX_OFFSET {10, 4};
 constexpr Vector2f HITBOX_SIZE {10, 28};
@@ -27,6 +27,7 @@ constexpr Vector2f HITBOX_SIZE {10, 28};
 
 #define MAX_SPEED_WALKING 125.0f
 #define MAX_SPEED_RUNNING 200.0f
+#define DASHING_SPEED 600.0f
 
 
 class Player {
@@ -41,6 +42,7 @@ class Player {
     
         float maxSpeed = MAX_SPEED_WALKING;
         float airboneXSpeedSnapshot; 
+        int direction = 1; // 1: right -1: left
 
         int currentFrame = 0;
         int frameWidth = 32;
@@ -51,6 +53,8 @@ class Player {
         bool groundedState = false;
         bool dyingState = false;
         bool landingState = false;
+        bool dashingState = false;
+        bool canDash = true;
 
         queue<Action> actionQueue;
 
@@ -69,8 +73,12 @@ class Player {
         void updatePosition(float deltaTime, float dx, float dy, Level& level);
         void resetSpeed();
         void resetAnimation();
+        void faceRight();
+        void faceLeft();
         void kill();
         void jump();
+        void dash();
+        
 };
 
 #endif

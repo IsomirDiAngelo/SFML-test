@@ -22,6 +22,8 @@ Player::Player(Vector2f spawnPosition) : sprite(texture) {
 
     groundedState = false;
     dyingState = false;
+    dashingState = false;
+    canDash = true;
 }
 
 RectangleShape& Player::getHitbox() {
@@ -41,10 +43,9 @@ void Player::update(float deltaTime, Level& level, Input& input) {
         if (!animate(deltaTime, 0.2f, 0, SPRITE_OFFSET_DYING, 3, false)) {
             return;
         } else {
-            sprite.setOrigin({0, 0});
-            sprite.setScale({1, 1});
+            faceRight();
             sprite.setPosition(Vector2f(level.getSpawnPosition()));
-            actionQueue = queue<Action>();
+            // actionQueue = queue<Action>();
             resetSpeed();
             resetAnimation();
             dyingState = false;
@@ -59,60 +60,93 @@ void Player::update(float deltaTime, Level& level, Input& input) {
         }
     }
 
-    if (Keyboard::isKeyPressed(Keyboard::Key::Right)) {
-        // Sprite is facing right
-        sprite.setOrigin({0, 0});
-        sprite.setScale({1, 1});
+    if (dashingState) {
+        cout << "Dashing" << endl;
+        animate(deltaTime, 0.1f, 0, 9 * 32, 8, true);
+        applyFriction(deltaTime, 4.0f);
+        if (abs(speed.x) <= MAX_SPEED_RUNNING) {
+            cout << "Dashing finished" << endl;
+            dashingState = false;
+        }
+    } 
 
-        // Accelerate right
-        if (!(Keyboard::isKeyPressed(Keyboard::Key::Left))) {
-            speed.x += acceleration.x * deltaTime;
-        } 
+    if (groundedState && !landingState && !dashingState) {
+        if (abs(speed.x) > 0 && abs(speed.x) <= MAX_SPEED_WALKING + 25.0f) {
+            animate(deltaTime, 0.1f, 0, SPRITE_OFFSET_WALKING, WALKING_FRAMES, true);
+        } else if (abs(speed.x) > MAX_SPEED_WALKING + 25.0f) {
+            animate(deltaTime, 0.1f, 0, SPRITE_OFFSET_RUNNING, RUNNING_FRAMES, true);
+        } else if (abs(speed.x) == 0) {
+            resetAnimation();
+            sprite.setTextureRect(IntRect({0, 0}, {frameWidth, frameHeight}));
+        }
+    }
+    
+    if (!dashingState || speed.y < 0) {
+        if (Keyboard::isKeyPressed(Keyboard::Key::Right)) {
+            faceRight();
+    
+            // Accelerate right
+            if (!(Keyboard::isKeyPressed(Keyboard::Key::Left))) {
+                speed.x += acceleration.x * deltaTime;
+            } 
+            
+            // Make the player turn faster if he was moving left before
+            if (speed.x < 0) {
+                applyFriction(deltaTime, abs(speed.x) / 40);
+            }
+        } else if (Keyboard::isKeyPressed(Keyboard::Key::Left)) {
+            faceLeft();
+    
+            // Accelerate left 
+            if (!(Keyboard::isKeyPressed(Keyboard::Key::Right))) {
+                speed.x -= acceleration.x * deltaTime;
+            } 
+    
+            // Make the player turn faster if he was moving right before
+            if (speed.x > 0) {
+                applyFriction(deltaTime, abs(speed.x) / 40);
+            }
+        } else {
+            applyFriction(deltaTime, 1.0f);
+        }
+
+        // Falling
+        if (!groundedState) {
+            // Increase gravity upon falling
+            float accelerationMultiplier;
+            if (speed.y < 0) {
+                accelerationMultiplier = 1.0f;
+                animate(deltaTime, 0.2f, 0, SPRITE_OFFSET_JUMPING, 5, false);
+            } else {
+                accelerationMultiplier = 1.5f;
+                sprite.setTextureRect(IntRect({5 * 32, SPRITE_OFFSET_JUMPING}, {frameWidth, frameHeight}));
+            }
+            speed.y += accelerationMultiplier * acceleration.y * deltaTime;
+        }
         
-        // Make the player turn faster if he was moving left before
-        if (speed.x < 0) {
-            applyFriction(deltaTime, abs(speed.x) / 40);
-        }
-    } else if (Keyboard::isKeyPressed(Keyboard::Key::Left)) {
-        // Sprite is facing left
-        sprite.setOrigin({(float) frameWidth, 0});
-        sprite.setScale({-1, 1});
+        // Limit speed if the player is not dashing
+        if (!dashingState) {
+            if (speed.x > maxSpeed) {
+                speed.x = maxSpeed;
+            } else if (speed.x < -maxSpeed) {
+                speed.x = -maxSpeed; 
+            }
 
-        // Accelerate left 
-        if (!(Keyboard::isKeyPressed(Keyboard::Key::Right))) {
-            speed.x -= acceleration.x * deltaTime;
-        } 
-
-        // Make the player turn faster if he was moving right before
-        if (speed.x > 0) {
-            applyFriction(deltaTime, abs(speed.x) / 40);
+            // Dashing
+            if (canDash && input.isKeyTriggered(Keyboard::Scancode::A)) {
+                dash();
+            }
         }
-    } else {
-        applyFriction(deltaTime, 1.0f);
+
     }
 
     // Jumping
     if (input.isKeyTriggered(Keyboard::Scancode::Space)) {
         if (groundedState) {
             jump();
-        } else if (landingState && actionQueue.front() != Action::JUMP) {
-            // Buffer jump if we are close to landing
+        } else if (landingState && (actionQueue.empty() || actionQueue.front() != Action::JUMP)) {
             actionQueue.push(Action::JUMP);
         }
-    }
-
-    // Falling
-    if (!groundedState) {
-        // Increase gravity upon falling
-        float accelerationMultiplier;
-        if (speed.y < 0) {
-            accelerationMultiplier = 1.0f;
-            animate(deltaTime, 0.2f, 0, SPRITE_OFFSET_JUMPING, 5, false);
-        } else {
-            accelerationMultiplier = 1.5f;
-            sprite.setTextureRect(IntRect({5 * 32, SPRITE_OFFSET_JUMPING}, {frameWidth, frameHeight}));
-        }
-        speed.y += accelerationMultiplier * acceleration.y * deltaTime;
     }
 
     // Running and walking
@@ -124,23 +158,6 @@ void Player::update(float deltaTime, Level& level, Input& input) {
             maxSpeed = max(MAX_SPEED_WALKING, std::min(MAX_SPEED_RUNNING, abs(airboneXSpeedSnapshot)));
         } else {
             maxSpeed = MAX_SPEED_WALKING;
-        }
-    }
-
-    if (speed.x > maxSpeed) {
-        speed.x = maxSpeed;
-    } else if (speed.x < -maxSpeed) {
-        speed.x = -maxSpeed; 
-    }
-
-    if (groundedState && !landingState) {
-        if (abs(speed.x) > 0 && abs(speed.x) <= MAX_SPEED_WALKING + 25.0f) {
-            animate(deltaTime, 0.1f, 0, SPRITE_OFFSET_WALKING, WALKING_FRAMES, true);
-        } else if (abs(speed.x) > MAX_SPEED_WALKING + 25.0f) {
-            animate(deltaTime, 0.1f, 0, SPRITE_OFFSET_RUNNING, RUNNING_FRAMES, true);
-        } else if (abs(speed.x) == 0) {
-            resetAnimation();
-            sprite.setTextureRect(IntRect({0, 0}, {frameWidth, frameHeight}));
         }
     }
 
@@ -242,6 +259,7 @@ void Player::updateGroundedState(float deltaTime, std::vector<std::vector<Tile>>
             }
             if (tiles[x][y].isSolid() && checkCollision(feetHitbox, tiles[x][y].getHitbox())) {
                 groundedState = true;
+                canDash = true;
                 // Jump if the player buffered a jump while landing
                 if (!actionQueue.empty() && actionQueue.front() == Action::JUMP) {
                     actionQueue.pop();
@@ -318,6 +336,25 @@ void Player::resetAnimation() {
 
 void Player::jump() {
     speed.y = -375.0f;
+}
+
+void Player::faceLeft() {
+    sprite.setOrigin({(float) frameWidth, 0});
+    sprite.setScale({-1, 1});
+    direction = -1;
+}
+
+void Player::faceRight() {
+    sprite.setOrigin({0, 0});
+    sprite.setScale({1, 1});
+    direction = 1;
+}
+
+void Player::dash() {
+    resetAnimation();
+    dashingState = true;
+    canDash = false; // Cannot dash again until the player touched the ground
+    speed.x = direction * DASHING_SPEED;
 }
 
 void Player::kill() {

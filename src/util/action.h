@@ -2,7 +2,7 @@
 #define ACTION_H
 
 enum class Action {
-    JUMP
+    JUMP = 0, DASH = 1
 };
 
 #endif

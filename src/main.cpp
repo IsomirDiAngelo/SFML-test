@@ -9,11 +9,12 @@
 #include <iostream>
 
 int main() {
+    Clock clock;
+
     RenderWindow window(VideoMode(SCREEN_RESOLUTION), "SFML test project");
     window.setFramerateLimit(FRAMERATE_LIMIT);
     window.setKeyRepeatEnabled(false);
 
-    Clock clock;
     
     Camera camera = Camera(SCREEN_RESOLUTION);
     Level level = Level(LEVEL_FILENAME, LEVEL_TILESET);
