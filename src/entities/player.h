@@ -4,9 +4,11 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <math.h>
+#include <queue>
 #include "../sys/tile.h"
 #include "../sys/level.h"
 #include "../sys/input.h"
+#include "../util/action.h"
 
 #define PLAYER_SPRITE_FILENAME "assets/characters/hooded protagonist penzilla.png"
 
@@ -15,8 +17,10 @@ constexpr Vector2i PLAYER_SPRITE_SIZE {256, 288};
 constexpr Vector2f HITBOX_OFFSET {10, 4};
 constexpr Vector2f HITBOX_SIZE {10, 28};
 
-#define SPRITE_OFFSET_WALKING 64.0f
-#define SPRITE_OFFSET_RUNNING 96.0f
+#define SPRITE_OFFSET_WALKING 64
+#define SPRITE_OFFSET_RUNNING 96
+#define SPRITE_OFFSET_JUMPING 5 * 32
+#define SPRITE_OFFSET_DYING 6 * 32
 
 #define WALKING_FRAMES 4
 #define RUNNING_FRAMES 8
@@ -48,10 +52,12 @@ class Player {
         bool dyingState = false;
         bool landingState = false;
 
+        queue<Action> actionQueue;
+
         void updateHitbox();
         void applyFriction(float deltaTime, float factor);
         void updateGroundedState(float deltaTime, std::vector<std::vector<Tile>>& tiles, Vector2u levelSize);
-        bool animate(float deltaTime, float timePerFrame, float offsetX, float offsetY, int totalFrames, bool repeat);
+        bool animate(float deltaTime, float timePerFrame, int offsetX, int offsetY, int totalFrames, bool repeat);
 
         bool checkCollision(RectangleShape& hitboxA, RectangleShape& hitboxB); // This one should be elsewhere probably
 
@@ -64,6 +70,7 @@ class Player {
         void resetSpeed();
         void resetAnimation();
         void kill();
+        void jump();
 };
 
 #endif

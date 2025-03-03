@@ -50,7 +50,7 @@ Level::Level(string levelFilename, string tilesetFilename) {
                 // 25 tiles of dimensions 16*16 per row 
                 tiles[x][y] = Tile(x, y, value);
 
-                Vector2i textureCoordinates = {(value % 25) * TILE_SIZE.x, (value / 25) * TILE_SIZE.y};
+                Vector2u textureCoordinates = {(value % 25) * TILE_SIZE.x, (value / 25) * TILE_SIZE.y};
 
                 // get a pointer to the triangles' vertices of the current tile
                 Vertex* triangles = &vertices[(x + y * size.x) * 6];

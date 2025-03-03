@@ -12,7 +12,6 @@ int main() {
     RenderWindow window(VideoMode(SCREEN_RESOLUTION), "SFML test project");
     window.setFramerateLimit(FRAMERATE_LIMIT);
     window.setKeyRepeatEnabled(false);
-    // window.setVerticalSyncEnabled(true);
 
     Clock clock;
     

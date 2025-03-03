@@ -8,10 +8,10 @@ Tile::Tile(int x, int y, int tileType) {
     this->dangerous = dangerTable[tileType];
     if (!dangerous) {
         this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y});
-        this->hitbox.setPosition({x * TILE_SIZE.x, y * TILE_SIZE.y});
+        this->hitbox.setPosition({(float) x * TILE_SIZE.x, (float) y * TILE_SIZE.y});
     } else {
         this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y - 4});
-        this->hitbox.setPosition({x * TILE_SIZE.x, y * TILE_SIZE.y + 4});
+        this->hitbox.setPosition({(float) x * TILE_SIZE.x, (float) y * TILE_SIZE.y + 4});              
     }
     this->hitbox.setFillColor(Color::Transparent); // Invisible
     

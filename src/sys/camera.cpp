@@ -4,7 +4,7 @@
 Camera::Camera() {}
 
 Camera::Camera(Vector2u size) {
-    this->view = View(FloatRect({0.0f, 0.0f}, {size.x, size.y}));
+    this->view = View(FloatRect({0.0f, 0.0f}, {(float) size.x, (float) size.y}));
     this->offset = {0.0f, 0.0f};
 }
 

@@ -54,7 +54,7 @@ void PauseMenu::update(float deltaTime, bool& pause, Player& player,
         }
     }
     
-    circleCursor.setPosition({70, SCREEN_RESOLUTION.y / 2 + pauseMenuIndex * 50});
+    circleCursor.setPosition({70, (float) SCREEN_RESOLUTION.y / 2 + pauseMenuIndex * 50});
 
     window.setView(window.getDefaultView());
     window.draw(menu);
