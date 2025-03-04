@@ -17,6 +17,7 @@ class Game {
         Level level;
 
         PauseMenu pauseMenu;
+        Text fpsDisplay;
 
         bool pause = false;      
 

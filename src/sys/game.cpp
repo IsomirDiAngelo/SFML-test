@@ -1,8 +1,9 @@
 #include "game.h"
 
 Game::Game(Player& player, Camera& camera, Level& level) 
-    : player(player), camera(camera), level(level) {
+    : player(player), camera(camera), level(level), fpsDisplay(GAME_FONT) {
     pauseMenu = PauseMenu();
+    fpsDisplay = Text(GAME_FONT);
 }
 
 void Game::run(float deltaTime, RenderWindow& window, Input& input) {
@@ -29,6 +30,12 @@ void Game::run(float deltaTime, RenderWindow& window, Input& input) {
                 window.draw(tiles[i][j].getHitbox());
             }
         }
+    }
+
+    if (DEBUG || Keyboard::isKeyPressed(Keyboard::Key::F1)) {
+        fpsDisplay.setString(to_string(1.0f / deltaTime));
+        window.setView(window.getDefaultView());
+        window.draw(fpsDisplay);
     }
     
     if (pause) {

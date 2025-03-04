@@ -14,13 +14,10 @@ int main() {
     RenderWindow window(VideoMode(SCREEN_RESOLUTION), "SFML test project");
     window.setFramerateLimit(FRAMERATE_LIMIT);
     window.setKeyRepeatEnabled(false);
-
     
     Camera camera = Camera(SCREEN_RESOLUTION);
     Level level = Level(LEVEL_FILENAME, LEVEL_TILESET);
     Player player = Player(Vector2f(level.getSpawnPosition()));
-
-    Text fpsDisplay(GAME_FONT);
 
     Game game = Game(player, camera, level);
     Input input = Input();
@@ -47,12 +44,6 @@ int main() {
         game.run(deltaTime, window, input);
         
         input.clear();
-
-        if (DEBUG || Keyboard::isKeyPressed(Keyboard::Key::F1)) {
-            fpsDisplay.setString(to_string(1.0f / clock.getElapsedTime().asSeconds()));
-            window.setView(window.getDefaultView());
-            window.draw(fpsDisplay);
-        }
 
         window.display();
     }

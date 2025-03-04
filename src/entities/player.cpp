@@ -35,7 +35,7 @@ Sprite& Player::getSprite() {
 }
 
 /**
- * Handle player actions, animation states and 
+ * Handle player actions, animation states
  */
 void Player::update(float deltaTime, Level& level, Input& input) {
     // Player is dying
@@ -60,12 +60,11 @@ void Player::update(float deltaTime, Level& level, Input& input) {
         }
     }
 
+    // Player is dashing
     if (dashingState) {
-        cout << "Dashing" << endl;
-        animate(deltaTime, 0.1f, 0, 9 * 32, 8, true);
+        animate(deltaTime, 0.01f, 0, 9 * 32, 8, true);
         applyFriction(deltaTime, 4.0f);
         if (abs(speed.x) <= MAX_SPEED_RUNNING) {
-            cout << "Dashing finished" << endl;
             dashingState = false;
         }
     } 
@@ -124,8 +123,8 @@ void Player::update(float deltaTime, Level& level, Input& input) {
             speed.y += accelerationMultiplier * acceleration.y * deltaTime;
         }
         
-        // Limit speed if the player is not dashing
         if (!dashingState) {
+            // Limit speed if the player is not dashing
             if (speed.x > maxSpeed) {
                 speed.x = maxSpeed;
             } else if (speed.x < -maxSpeed) {
@@ -188,10 +187,23 @@ void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
 
                 hitbox.setPosition(hitbox.getPosition() + Vector2f(axis == 0 ? moveSign : 0, axis == 1 ? moveSign : 0));
 
+                if (hitbox.getPosition().x < 0 || hitbox.getPosition().x + hitbox.getSize().x > levelSize.x * TILE_SIZE.x 
+                    || hitbox.getPosition().y < 0 || hitbox.getPosition().y + hitbox.getSize().y > levelSize.y * TILE_SIZE.y) {
+                    if (axis == 0) speed.x = 0;
+                    if (axis == 1) {
+                        if (move > 0) {
+                            kill();
+                        } else {
+                            speed.y = 0;
+                        }
+                    }
+                    return;
+                } 
+
                 // Check for collisions with level tiles before moving
                 for (int x = playerGridPositonX - 1; x <= playerGridPositonX + 1; x++) {
                     for (int y = playerGridPositonY - 1; y <= playerGridPositonY + 2; y++) {
-                        if (x < 0 || y < 0 || x > levelSize.x || y > levelSize.y) {
+                        if (x < 0 || y < 0 || x >= levelSize.x || y >= levelSize.y) {
                             continue;
                         }
                         if (checkCollision(hitbox, tiles[x][y].getHitbox())) {
@@ -249,7 +261,7 @@ void Player::updateGroundedState(float deltaTime, std::vector<std::vector<Tile>>
     for (int x = playerGridPositonX - 1; x <= playerGridPositonX + 1; x++) {
         // Check for tiles below the player's feet (starting from Y + 2)
         for (int y = playerGridPositonY + 2; y <= playerGridPositonY + 4; y++) {
-            if (x < 0 || y < 0 || x > levelSize.x || y > levelSize.y) {
+            if (x < 0 || y < 0 || x >= levelSize.x || y >= levelSize.y) {
                 continue;
             }
             // Player is considered landing when he is about to hit the tile below (48 pixels margin)
