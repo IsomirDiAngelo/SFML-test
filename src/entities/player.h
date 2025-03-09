@@ -69,7 +69,7 @@ class Player {
         Player(Vector2f spawnPosition);
         RectangleShape& getHitbox();
         Sprite& getSprite();
-        void update(float deltaTime, Level& level, Input& input);
+        void update(float deltaTime, Clock& globalClock, Level& level, Input& input);
         void updatePosition(float deltaTime, float dx, float dy, Level& level);
         void resetSpeed();
         void resetAnimation();

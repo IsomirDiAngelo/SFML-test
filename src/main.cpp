@@ -10,7 +10,8 @@
 #include <iostream>
 
 int main() {
-    Clock clock;
+    Clock globalClock; // Used to know in how much time the player completed the level
+    Clock realTimeClock; // Used to update the game each frame
 
     RenderWindow window(VideoMode(SCREEN_RESOLUTION), "SFML test project");
     window.setFramerateLimit(FRAMERATE_LIMIT);
@@ -24,7 +25,7 @@ int main() {
     Input input = Input();
 
     while (window.isOpen()) {
-        float deltaTime = clock.restart().asSeconds();
+        float deltaTime = realTimeClock.restart().asSeconds();
         Keyboard::Scancode keyPressed;
         Keyboard::Scancode keyReleased;
 
@@ -42,7 +43,7 @@ int main() {
         
         window.clear();
     
-        game.run(deltaTime, window, input);
+        game.run(deltaTime, globalClock, window, input);
         
         input.clear();
 

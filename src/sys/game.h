@@ -18,13 +18,14 @@ class Game {
 
         PauseMenu pauseMenu;
         Text fpsDisplay;
+        Text timerDisplay;
 
         bool pause = false;  
         bool gameFinished = false;    
 
     public:
         Game(Player& player, Camera& camera, Level& level);
-        void run(float deltaTime, RenderWindow& window, Input& input);
+        void run(float deltaTime, Clock& globalClock, RenderWindow& window, Input& input);
         Player& getPlayer();
         void setPlayer(Player& player);
         void setLevel(Level& level);

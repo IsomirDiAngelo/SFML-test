@@ -1,21 +1,25 @@
 #include "game.h"
 
 Game::Game(Player& player, Camera& camera, Level& level) 
-    : player(player), camera(camera), level(level), fpsDisplay(GAME_FONT) {
+    : player(player), camera(camera), level(level), fpsDisplay(GAME_FONT), timerDisplay(GAME_FONT) {
     pauseMenu = PauseMenu();
     fpsDisplay = Text(GAME_FONT);
+    fpsDisplay.setPosition({SCREEN_RESOLUTION.x - 120, 0});
+    timerDisplay = Text(GAME_FONT);
 }
 
-void Game::run(float deltaTime, RenderWindow& window, Input& input) {
+void Game::run(float deltaTime, Clock& globalClock, RenderWindow& window, Input& input) {
     if (input.isKeyTriggered(Keyboard::Scancode::Escape)) {
         pause = !pause;
         pauseMenu.resetCursor();
     }
 
     if (!pause && !gameFinished) {
-        player.update(deltaTime, level, input);
+        player.update(deltaTime, globalClock, level, input);
         camera.update(player.getHitbox().getPosition(), level.getSize());
     }
+
+    // Draw game
     
     window.setView(camera.getView());
     window.draw(level);
@@ -27,6 +31,11 @@ void Game::run(float deltaTime, RenderWindow& window, Input& input) {
             window.draw(level.entities[i]->getSprite());
             level.entities[i]->update(deltaTime, player, window, gameFinished);
         }
+    } else {
+        globalClock.stop();
+        timerDisplay.setCharacterSize(50);
+        timerDisplay.setOrigin(timerDisplay.getLocalBounds().getCenter());
+        timerDisplay.setPosition({SCREEN_RESOLUTION.x / 2, SCREEN_RESOLUTION.y / 2});
     }
 
     if (DEBUG) {
@@ -39,9 +48,14 @@ void Game::run(float deltaTime, RenderWindow& window, Input& input) {
         }
     }
 
+    // Draw UI
+
+    window.setView(window.getDefaultView());
+    timerDisplay.setString(to_string(globalClock.getElapsedTime().asSeconds()));
+    window.draw(timerDisplay);
+
     if (DEBUG || Keyboard::isKeyPressed(Keyboard::Key::F1)) {
         fpsDisplay.setString(to_string(1.0f / deltaTime));
-        window.setView(window.getDefaultView());
         window.draw(fpsDisplay);
     }
     

@@ -26,6 +26,7 @@ MapEntity::MapEntity(MapEntityType type, Vector2f spawnPosition) : sprite(textur
 
 MapEntity::MapEntity(MapEntityType type, Vector2f spawnPosition, string tutorialString) 
     : MapEntity(type, spawnPosition) {
+        cout << tutorialString << endl;
     tutorialTextBox.setString(tutorialString);
     tutorialTextBox.setCharacterSize(20);
     tutorialTextBox.setOutlineThickness(1);

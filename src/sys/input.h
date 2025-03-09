@@ -17,6 +17,7 @@ class Input {
         void updateKeyRelease(Keyboard::Scancode keyReleased);
         void clear();
         bool isKeyTriggered(Keyboard::Scancode keyScancode);
+        bool isKeyReleased(Keyboard::Scancode keyReleased);
 };
 
 #endif

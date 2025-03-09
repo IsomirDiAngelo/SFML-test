@@ -37,13 +37,14 @@ Sprite& Player::getSprite() {
 /**
  * Handle player actions, animation states
  */
-void Player::update(float deltaTime, Level& level, Input& input) {
+void Player::update(float deltaTime, Clock& globalClock, Level& level, Input& input) {
     // Player is dying
     if (dyingState) {
         if (!animate(deltaTime, 0.2f, 0, SPRITE_OFFSET_DYING, 3, false)) {
             return;
         } else {
             faceRight();
+            globalClock.restart();
             sprite.setPosition(Vector2f(level.getSpawnPosition()));
             // actionQueue = queue<Action>();
             resetSpeed();
@@ -120,7 +121,12 @@ void Player::update(float deltaTime, Level& level, Input& input) {
                 accelerationMultiplier = 1.5f;
                 sprite.setTextureRect(IntRect({5 * 32, SPRITE_OFFSET_JUMPING}, {frameWidth, frameHeight}));
             }
-            speed.y += accelerationMultiplier * acceleration.y * deltaTime;
+
+            if (input.isKeyReleased(Keyboard::Scancode::Space) && speed.y < 0) {
+                speed.y = -50.0f; // Cancel upward momentum if space is released while jumping
+            } else {
+                speed.y += accelerationMultiplier * acceleration.y * deltaTime;
+            }
         }
         
         if (!dashingState) {
@@ -175,6 +181,7 @@ void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
     std::vector<std::vector<Tile>> tiles = level.getTiles();
     Vector2u levelSize = level.getSize();
 
+    // Move the player in axis X (0) or Y (1) and handle collisions if necessary
     auto movePlayer = [&](int& move, int axis) {
         if (move != 0) {
             if (axis == 0) remainder.x -= move;
@@ -187,6 +194,7 @@ void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
 
                 hitbox.setPosition(hitbox.getPosition() + Vector2f(axis == 0 ? moveSign : 0, axis == 1 ? moveSign : 0));
 
+                // Prevent out of bounds and kill player if he falls down to the bottom
                 if (hitbox.getPosition().x < 0 || hitbox.getPosition().x + hitbox.getSize().x > levelSize.x * TILE_SIZE.x 
                     || hitbox.getPosition().y < 0 || hitbox.getPosition().y + hitbox.getSize().y > levelSize.y * TILE_SIZE.y) {
                     if (axis == 0) speed.x = 0;
