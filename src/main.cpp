@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include "entities/player.h"
+#include "entities/mapEntity.h"
 #include "sys/tile.h"
 #include "sys/level.h"
 #include "util/globalConstants.h"

@@ -12,7 +12,7 @@ void Game::run(float deltaTime, RenderWindow& window, Input& input) {
         pauseMenu.resetCursor();
     }
 
-    if (!pause) {
+    if (!pause && !gameFinished) {
         player.update(deltaTime, level, input);
         camera.update(player.getHitbox().getPosition(), level.getSize());
     }
@@ -21,6 +21,13 @@ void Game::run(float deltaTime, RenderWindow& window, Input& input) {
     window.draw(level);
     window.draw(player.getSprite());
     window.draw(player.getHitbox());
+
+    if (!gameFinished) {
+        for (int i = 0; i < level.entities.size(); i++) {
+            window.draw(level.entities[i]->getSprite());
+            level.entities[i]->update(deltaTime, player, window, gameFinished);
+        }
+    }
 
     if (DEBUG) {
         std::vector<std::vector<Tile>> tiles = level.getTiles();

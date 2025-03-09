@@ -25,10 +25,13 @@ Level::Level(string levelFilename, string tilesetFilename) {
 
     while (getline(file, line)) {
         istringstream iss(line);
-        int value;
+        string stringValue;
+        MapEntityType met = MapEntityType::_NULL;
+        Vector2f entitySpawnPosition;
         x = 0;
-        while (iss >> value) {
+        while (iss >> stringValue) {
             if (y == -1) { 
+                int value = stoi(stringValue);
                 // Read level size from the first line of the file
                 if (x == 0) {
                     size.x = value;
@@ -36,24 +39,29 @@ Level::Level(string levelFilename, string tilesetFilename) {
                     size.y = value;
 
                     tiles = vector<vector<Tile>>(size.x, vector<Tile>(size.y, Tile()));
+                    entities = {};
 
                     // Building 2 triangles per tile
-                    vertices.setPrimitiveType(PrimitiveType::Triangles);
-                    vertices.resize(size.x * size.y * 6);
+                    mainLayerVertices.setPrimitiveType(PrimitiveType::Triangles);
+                    mainLayerVertices.resize(size.x * size.y * 6);
+
+                    backgroundLayerVertices.setPrimitiveType(PrimitiveType::Triangles);
+                    backgroundLayerVertices.resize(size.x * size.y * 6);
                 // Read spawn position
                 } else if (x == 2) {
                     spawnPosition.x = value;
                 } else if (x == 3) {
                     spawnPosition.y = value;
                 }
-            } else {
+            } else if (y < size.y) {
+                int value = stoi(stringValue);
                 // 25 tiles of dimensions 16*16 per row 
                 tiles[x][y] = Tile(x, y, value);
 
                 Vector2u textureCoordinates = {(value % 25) * TILE_SIZE.x, (value / 25) * TILE_SIZE.y};
 
-                // get a pointer to the triangles' vertices of the current tile
-                Vertex* triangles = &vertices[(x + y * size.x) * 6];
+                // get a pointer to the triangles' mainLayerVertices of the current tile
+                Vertex* triangles = &mainLayerVertices[(x + y * size.x) * 6];
 
                 triangles[0].position = Vector2f(x * TILE_SIZE.x, y * TILE_SIZE.y);
                 triangles[1].position = Vector2f((x + 1) * TILE_SIZE.x, y * TILE_SIZE.y);
@@ -68,6 +76,53 @@ Level::Level(string levelFilename, string tilesetFilename) {
                 triangles[3].texCoords = Vector2f(textureCoordinates.x, textureCoordinates.y + TILE_SIZE.y);
                 triangles[4].texCoords = Vector2f(textureCoordinates.x + TILE_SIZE.x, textureCoordinates.y);
                 triangles[5].texCoords = Vector2f(textureCoordinates.x + TILE_SIZE.x, textureCoordinates.y + TILE_SIZE.y);
+            } else if (y < size.y * 2) { // Background layer
+                int value = stoi(stringValue);
+                int backgroundX = x;
+                int backgroundY = y - size.y;
+
+                Vector2u textureCoordinates = {(value % 25) * TILE_SIZE.x, (value / 25) * TILE_SIZE.y};
+
+                // get a pointer to the triangles' backgroundLayerVertices of the current tile
+                Vertex* triangles = &backgroundLayerVertices[(backgroundX + backgroundY * size.x) * 6];
+
+                triangles[0].position = Vector2f(backgroundX * TILE_SIZE.x, backgroundY * TILE_SIZE.y);
+                triangles[1].position = Vector2f((backgroundX + 1) * TILE_SIZE.x, backgroundY * TILE_SIZE.y);
+                triangles[2].position = Vector2f(backgroundX * TILE_SIZE.x, (backgroundY + 1) * TILE_SIZE.y);
+                triangles[3].position = Vector2f(backgroundX * TILE_SIZE.x, (backgroundY + 1) * TILE_SIZE.y);
+                triangles[4].position = Vector2f((backgroundX + 1) * TILE_SIZE.x, backgroundY * TILE_SIZE.y);
+                triangles[5].position = Vector2f((backgroundX + 1) * TILE_SIZE.x, (backgroundY + 1) * TILE_SIZE.y);
+
+                triangles[0].texCoords = Vector2f(textureCoordinates.x, textureCoordinates.y);
+                triangles[1].texCoords = Vector2f(textureCoordinates.x + TILE_SIZE.x, textureCoordinates.y);
+                triangles[2].texCoords = Vector2f(textureCoordinates.x, textureCoordinates.y + TILE_SIZE.y);
+                triangles[3].texCoords = Vector2f(textureCoordinates.x, textureCoordinates.y + TILE_SIZE.y);
+                triangles[4].texCoords = Vector2f(textureCoordinates.x + TILE_SIZE.x, textureCoordinates.y);
+                triangles[5].texCoords = Vector2f(textureCoordinates.x + TILE_SIZE.x, textureCoordinates.y + TILE_SIZE.y);
+            } else { // Entities
+                if (x == 0) {
+                    if (!stringValue.compare("TA")) {
+                        met = MapEntityType::TUTORIAL_ARROW;
+                        cout << "TAH" << endl;
+                    } else if (!stringValue.compare("SF")) {
+                        met = MapEntityType::SACRED_FRUIT;
+                        cout << "SF" << endl;
+                    }
+                } else if (x == 1) {
+                    int value = stoi(stringValue);
+                    entitySpawnPosition.x = value;
+                } else if (x == 2) {
+                    int value = stoi(stringValue);
+                    entitySpawnPosition.y = value; 
+                    if (met == MapEntityType::TUTORIAL_ARROW) {
+                        getline(iss, line);
+                        MapEntity* entity = new MapEntity(met, entitySpawnPosition, line);
+                        entities.push_back(entity);
+                    } else {
+                        MapEntity* entity = new MapEntity(met, entitySpawnPosition);
+                        entities.push_back(entity);
+                    }                 
+                }
             }
             x++;
         }
@@ -95,12 +150,24 @@ void Level::draw(RenderTarget& target, RenderStates states) const {
     states.texture = &tileset;
 
     // draw the vertex array
-    target.draw(vertices, states);
+    target.draw(backgroundLayerVertices, states);
+    target.draw(mainLayerVertices, states);
 }
+
+void Level::updateEntities(Player& player, RenderWindow& window, bool& gameFinished) {
+    // for (int i = 0; i < entities.size(); i++) {
+    //     entities[i].update(player, window, gameFinished);
+    //     window.draw(entities[i].getSprite());
+    // } 
+} 
 
 vector<vector<Tile>> Level::getTiles() {
     return tiles;
 }
+
+// array<MapEntity*, 10>& Level::getEntities() {
+//     return entities;
+// }
 
 Vector2u Level::getSize() const {
     return size;
@@ -110,8 +177,8 @@ Vector2u Level::getSpawnPosition() const {
     return spawnPosition;
 }
 
-VertexArray& Level::getVertices() {
-    return vertices;
+VertexArray& Level::getMainLayerVertices() {
+    return mainLayerVertices;
 }
 
 Texture& Level::getTileset() {

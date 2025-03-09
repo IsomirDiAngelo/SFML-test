@@ -6,12 +6,18 @@ Tile::Tile(int x, int y, int tileType) {
     this->tileType = tileType;
     this->solid = collisionTable[tileType];
     this->dangerous = dangerTable[tileType];
-    if (!dangerous) {
-        this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y});
+    if (dangerous) {
+        this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y - 4});
+        this->hitbox.setPosition({(float) x * TILE_SIZE.x, (float) y * TILE_SIZE.y + 4});  
+    } else if (leavesTiles.find(tileType) != leavesTiles.end()) {
+        this->hitbox = RectangleShape({TILE_SIZE.x - 4, TILE_SIZE.y - 4});
+        this->hitbox.setPosition({(float) x * TILE_SIZE.x + 4, (float) y * TILE_SIZE.y + 4}); 
+    } else if (branchesTiles.find(tileType) != branchesTiles.end()) {
+        this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y - 4});
         this->hitbox.setPosition({(float) x * TILE_SIZE.x, (float) y * TILE_SIZE.y});
     } else {
-        this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y - 4});
-        this->hitbox.setPosition({(float) x * TILE_SIZE.x, (float) y * TILE_SIZE.y + 4});              
+        this->hitbox = RectangleShape({TILE_SIZE.x, TILE_SIZE.y});
+        this->hitbox.setPosition({(float) x * TILE_SIZE.x, (float) y * TILE_SIZE.y});   
     }
     this->hitbox.setFillColor(Color::Transparent); // Invisible
     

@@ -1,6 +1,8 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+class Level;
+
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <math.h>
@@ -10,7 +12,7 @@
 #include "../sys/input.h"
 #include "../util/action.h"
 
-#define PLAYER_SPRITE_FILENAME "assets/characters/hooded protagonist penzilla.png"
+#define PLAYER_SPRITE_FILENAME "assets/entities/hooded protagonist penzilla.png"
 
 constexpr Vector2i PLAYER_SPRITE_SIZE {256, 320};
 
@@ -63,8 +65,6 @@ class Player {
         void updateGroundedState(float deltaTime, std::vector<std::vector<Tile>>& tiles, Vector2u levelSize);
         bool animate(float deltaTime, float timePerFrame, int offsetX, int offsetY, int totalFrames, bool repeat);
 
-        bool checkCollision(RectangleShape& hitboxA, RectangleShape& hitboxB); // This one should be elsewhere probably
-
     public:
         Player(Vector2f spawnPosition);
         RectangleShape& getHitbox();
@@ -78,6 +78,7 @@ class Player {
         void kill();
         void jump();
         void dash();
+        bool checkCollision(RectangleShape& hitboxA, RectangleShape& hitboxB); // This one should be elsewhere probably
         
 };
 

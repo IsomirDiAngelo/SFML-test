@@ -54,7 +54,7 @@ void Player::update(float deltaTime, Level& level, Input& input) {
 
     // Player is landing from a fall
     if (landingState) {
-        if (animate(deltaTime, 0.1f, 4 * 32, SPRITE_OFFSET_JUMPING, 4, false)) {
+        if (animate(deltaTime, 0.02f, 4 * 32, SPRITE_OFFSET_JUMPING, 4, false)) {
             resetAnimation();
             landingState = false;
         }

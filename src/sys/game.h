@@ -7,7 +7,7 @@
 #include "pauseMenu.h"
 #include "input.h"
 
-#define LEVEL_FILENAME "assets/levels/test.lvl"
+#define LEVEL_FILENAME "assets/levels/test2.lvl"
 #define LEVEL_TILESET "assets/tiles/tiles.png"
 
 class Game {
@@ -19,7 +19,8 @@ class Game {
         PauseMenu pauseMenu;
         Text fpsDisplay;
 
-        bool pause = false;      
+        bool pause = false;  
+        bool gameFinished = false;    
 
     public:
         Game(Player& player, Camera& camera, Level& level);
