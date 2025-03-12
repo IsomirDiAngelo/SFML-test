@@ -4,6 +4,7 @@ Player::Player(Vector2f spawnPosition) : sprite(texture) {
     texture = Texture(PLAYER_SPRITE_FILENAME, false, IntRect({0, 0}, PLAYER_SPRITE_SIZE));
     sprite = Sprite(texture);
     sprite.setPosition(spawnPosition); 
+    sprite.setTextureRect(IntRect({0, 0}, {frameWidth, frameHeight}));
     
     health = 100;
     hitbox = RectangleShape(HITBOX_SIZE);
@@ -16,14 +17,16 @@ Player::Player(Vector2f spawnPosition) : sprite(texture) {
 
     updateHitbox();
     
-    speed = {0.0f, 10.0f};
+    speed = {0.0f, 0.0f};
     acceleration = {300.0f, 1000.0f};
     friction = {600.0f, 0.0f};
 
-    groundedState = false;
+    groundedState = true;
     dyingState = false;
     dashingState = false;
+    jumpingState = false;
     canDash = true;
+    colliding = true;
 }
 
 RectangleShape& Player::getHitbox() {
@@ -38,24 +41,27 @@ Sprite& Player::getSprite() {
  * Handle player actions, animation states
  */
 void Player::update(float deltaTime, Clock& globalClock, Level& level, Input& input) {
+    // cout << sprite.getPosition().x << "," << sprite.getPosition().y << endl;
+
     // Player is dying
     if (dyingState) {
-        if (!animate(deltaTime, 0.2f, 0, SPRITE_OFFSET_DYING, 3, false)) {
-            return;
-        } else {
+        if (animate(deltaTime, 0.2f, 0, SPRITE_OFFSET_DYING, 3, false)) {
+            dyingState = false;
             faceRight();
             globalClock.restart();
             sprite.setPosition(Vector2f(level.getSpawnPosition()));
+            sprite.setTextureRect(IntRect({0, 0}, {frameWidth, frameHeight}));
             // actionQueue = queue<Action>();
             resetSpeed();
             resetAnimation();
-            dyingState = false;
+        } else {
+            return;
         }
     }
 
     // Player is landing from a fall
-    if (landingState) {
-        if (animate(deltaTime, 0.02f, 4 * 32, SPRITE_OFFSET_JUMPING, 4, false)) {
+    if (landingState && !jumpingState) {
+        if (animate(deltaTime, 0.04f, 4 * 32, SPRITE_OFFSET_JUMPING, 4, false)) {
             resetAnimation();
             landingState = false;
         }
@@ -63,6 +69,7 @@ void Player::update(float deltaTime, Clock& globalClock, Level& level, Input& in
 
     // Player is dashing
     if (dashingState) {
+        speed.y = 0;
         animate(deltaTime, 0.01f, 0, 9 * 32, 8, true);
         applyFriction(deltaTime, 4.0f);
         if (abs(speed.x) <= MAX_SPEED_RUNNING) {
@@ -106,25 +113,29 @@ void Player::update(float deltaTime, Clock& globalClock, Level& level, Input& in
             if (speed.x > 0) {
                 applyFriction(deltaTime, abs(speed.x) / 40);
             }
-        } else {
+        } else if (abs(speed.x) > 0) {
             applyFriction(deltaTime, 1.0f);
         }
 
+        // Finish the jumping animation if the player started jumping
+        if (jumpingState) {
+            jumpingState = !animate(deltaTime, 0.04f, 0, SPRITE_OFFSET_JUMPING, 6, false);
+        }
+
         // Falling
-        if (!groundedState) {
+        if (!groundedState && !dashingState) {
             // Increase gravity upon falling
             float accelerationMultiplier;
+
             if (speed.y < 0) {
                 accelerationMultiplier = 1.0f;
-                animate(deltaTime, 0.2f, 0, SPRITE_OFFSET_JUMPING, 5, false);
             } else {
-                accelerationMultiplier = 1.5f;
-                sprite.setTextureRect(IntRect({5 * 32, SPRITE_OFFSET_JUMPING}, {frameWidth, frameHeight}));
+                accelerationMultiplier = 1.25f;
             }
 
-            if (input.isKeyReleased(Keyboard::Scancode::Space) && speed.y < 0) {
+            if (input.isKeyReleased(Keyboard::Scancode::Space) && speed.y < -50.0f) {
                 speed.y = -50.0f; // Cancel upward momentum if space is released while jumping
-            } else {
+            } else if (!dashingState || speed.y < 0) {
                 speed.y += accelerationMultiplier * acceleration.y * deltaTime;
             }
         }
@@ -166,7 +177,13 @@ void Player::update(float deltaTime, Clock& globalClock, Level& level, Input& in
         }
     }
 
-    updatePosition(deltaTime, speed.x * deltaTime, speed.y * deltaTime, level);
+    // cout << speed.x * deltaTime << endl;
+
+    // updatePosition(deltaTime, speed.x * deltaTime, speed.y * deltaTime, level);
+    // Vector2f remainder = {abs(speed.x) * deltaTime, abs(speed.y) * deltaTime};
+    // Vector2i sign = {speed.x > 0 ? 1 : -1, speed.y > 0 ? 1 : -1};
+
+    updatePosition2({speed.x * deltaTime, speed.y * deltaTime}, deltaTime, level);
 }
 
 /**
@@ -176,6 +193,7 @@ void Player::update(float deltaTime, Clock& globalClock, Level& level, Input& in
  * More robust than v1
  */
 void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
+
     Vector2f remainder = {};
 
     std::vector<std::vector<Tile>> tiles = level.getTiles();
@@ -205,6 +223,7 @@ void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
                             speed.y = 0;
                         }
                     }
+                    cout << "out of bounds" << endl;
                     return;
                 } 
 
@@ -216,6 +235,7 @@ void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
                         }
                         if (checkCollision(hitbox, tiles[x][y].getHitbox())) {
                             if (tiles[x][y].isSolid()) {
+                                cout << "collision" << endl;
                                 if (axis == 0) speed.x = 0;
                                 if (axis == 1) speed.y = 0;
                                 return;
@@ -227,6 +247,7 @@ void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
                         }
                     }
                 }
+                cout << "moving sprite" << endl;
                 sprite.move({axis == 0 ? moveSign : 0.0f, axis == 1 ? moveSign : 0.0f});
                 move -= moveSign;
             }
@@ -250,6 +271,88 @@ void Player::updatePosition(float deltaTime, float dx, float dy, Level& level) {
     updateHitbox();
 
     updateGroundedState(deltaTime, tiles, levelSize);
+}
+
+void Player::updatePosition2(Vector2f deltaPosition, float deltaTime, Level& level) {
+
+    std::vector<std::vector<Tile>> tiles = level.getTiles();
+    Vector2u levelSize = level.getSize();
+    
+    // if (sign.y == 1 && remainder.y > 0 || sign.y == -1 && remainder.y < 0) {
+    //     float distanceY = sign.y;
+    //     if (movePlayer(distanceY, 'y', tiles, levelSize)) {
+    //         remainder.y -= sign.y * distanceY;
+    //     } else {
+    //         remainder.y = 0;
+    //     }
+    // } else if (sign.x == 1 && remainder.x > 0 || sign.x == -1 && remainder.x < 0) {
+    //     float distanceX = sign.x;
+    //     if (movePlayer(distanceX, 'x', tiles, levelSize)) {
+    //         remainder.x -= sign.x * distanceX;
+    //     }
+    // }
+
+    movePlayer(deltaPosition.y, deltaTime, 'y', tiles, levelSize);
+    updateHitbox();
+
+    movePlayer(deltaPosition.x, deltaTime, 'x', tiles, levelSize);
+    updateHitbox();
+
+    updateGroundedState(deltaTime, tiles, levelSize);
+}
+
+void Player::movePlayer(float distance, float deltaTime, char axis, vector<vector<Tile>>& tiles, Vector2u levelSize) {
+    
+    bool colliding = false;
+    float moved = abs(distance);
+    int moveSign = copysign(1.0, distance);
+
+    while (moved > 0) {
+        int playerGridPositonX = hitbox.getPosition().x / TILE_SIZE.x;
+        int playerGridPositonY = hitbox.getPosition().y / TILE_SIZE.y;
+
+        hitbox.setPosition(hitbox.getPosition() + Vector2f(axis == 'x' ? distance * deltaTime : 0, axis == 'y' ? distance * deltaTime : 0));
+
+        // Prevent out of bounds and kill player if he falls down to the bottom
+        if (hitbox.getPosition().x < 0 || hitbox.getPosition().x + hitbox.getSize().x > levelSize.x * TILE_SIZE.x 
+            || hitbox.getPosition().y < 0 || hitbox.getPosition().y + hitbox.getSize().y > levelSize.y * TILE_SIZE.y) {
+            if (axis == 'x') speed.x = 0;
+            if (axis == 'y') {
+                if (distance > 0) {
+                    kill();
+                } else {
+                    speed.y = 0;
+                }
+            }
+            return;
+        } 
+
+        // Check for collisions with level tiles before moving
+        for (int x = playerGridPositonX - 1; x <= playerGridPositonX + 1; x++) {
+            for (int y = playerGridPositonY - 1; y <= playerGridPositonY + 2; y++) {
+                if (x < 0 || y < 0 || x >= levelSize.x || y >= levelSize.y) {
+                    continue;
+                }
+                if (checkCollision(hitbox, tiles[x][y].getHitbox())) {
+                    if (tiles[x][y].isSolid()) {
+                        if (axis == 'x') speed.x = 0;
+                        if (axis == 'y') speed.y = 0;
+                        return;
+                    }
+                    if (tiles[x][y].isDangerous()) {
+                        kill();
+                        return;
+                    }
+                }
+            }
+        }
+
+        sprite.move({axis == 'x' ? distance * deltaTime : 0, axis == 'y' ? distance * deltaTime : 0});
+        moved -= abs(distance) * deltaTime;
+    }
+
+    
+    return;
 }
 
 /**
@@ -279,6 +382,7 @@ void Player::updateGroundedState(float deltaTime, std::vector<std::vector<Tile>>
             }
             if (tiles[x][y].isSolid() && checkCollision(feetHitbox, tiles[x][y].getHitbox())) {
                 groundedState = true;
+                jumpingState = false;
                 canDash = true;
                 // Jump if the player buffered a jump while landing
                 if (!actionQueue.empty() && actionQueue.front() == Action::JUMP) {
@@ -309,10 +413,12 @@ void Player::updateHitbox() {
 bool Player::animate(float deltaTime, float timePerFrame, int offsetX, int offsetY, int totalFrames, bool repeat) {
     animationTimer += deltaTime;
     totalAnimationTimer += deltaTime;
+
+    cout << totalAnimationTimer << endl;
     
     if (totalAnimationTimer >= totalFrames * timePerFrame) {
-        totalAnimationTimer = 0.0f;
         if (!repeat) {
+            cout << "animation finished" << endl;
             return true;
         }
     }
@@ -331,6 +437,7 @@ bool Player::checkCollision(RectangleShape& hitboxA, RectangleShape& hitboxB) {
 }
 
 void Player::applyFriction(float deltaTime, float factor) {
+    cout << "friction" << endl;
     if (speed.x > 0) {
         speed.x -= factor * friction.x * deltaTime;
         if (speed.x < 0) {
@@ -355,6 +462,8 @@ void Player::resetAnimation() {
 }
 
 void Player::jump() {
+    resetAnimation();
+    jumpingState = true;
     speed.y = -375.0f;
 }
 

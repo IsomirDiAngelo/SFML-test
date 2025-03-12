@@ -29,7 +29,7 @@ constexpr Vector2f HITBOX_SIZE {10, 28};
 
 #define MAX_SPEED_WALKING 125.0f
 #define MAX_SPEED_RUNNING 200.0f
-#define DASHING_SPEED 600.0f
+#define DASHING_SPEED 525.0f
 
 
 class Player {
@@ -56,7 +56,11 @@ class Player {
         bool dyingState = false;
         bool landingState = false;
         bool dashingState = false;
+        bool jumpingState = false;
         bool canDash = true;
+        bool colliding = true;
+
+        float collisionTimer = 0.0f;
 
         queue<Action> actionQueue;
 
@@ -71,6 +75,8 @@ class Player {
         Sprite& getSprite();
         void update(float deltaTime, Clock& globalClock, Level& level, Input& input);
         void updatePosition(float deltaTime, float dx, float dy, Level& level);
+        void updatePosition2(Vector2f deltaPosition, float deltaTime, Level& level);
+        void movePlayer(float, float, char, vector<vector<Tile>>&, Vector2u levelSize);
         void resetSpeed();
         void resetAnimation();
         void faceRight();

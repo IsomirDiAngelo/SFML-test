@@ -14,7 +14,7 @@ int main() {
     Clock realTimeClock; // Used to update the game each frame
 
     RenderWindow window(VideoMode(SCREEN_RESOLUTION), "SFML test project");
-    window.setFramerateLimit(FRAMERATE_LIMIT);
+    window.setFramerateLimit(120);
     window.setKeyRepeatEnabled(false);
     
     Camera camera = Camera(SCREEN_RESOLUTION);

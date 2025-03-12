@@ -25,18 +25,13 @@ MapEntity::MapEntity(MapEntityType type, Vector2f spawnPosition) : sprite(textur
 }
 
 MapEntity::MapEntity(MapEntityType type, Vector2f spawnPosition, string tutorialString) 
-    : MapEntity(type, spawnPosition) {
-        cout << tutorialString << endl;
+    : MapEntity(type, spawnPosition) { 
     tutorialTextBox.setString(tutorialString);
     tutorialTextBox.setCharacterSize(20);
     tutorialTextBox.setOutlineThickness(1);
     tutorialTextBox.setOutlineColor(Color::Black);
     tutorialTextBox.setOrigin(tutorialTextBox.getGlobalBounds().getCenter());
     tutorialTextBox.setPosition(spawnPosition - Vector2f(0, 32));
-}
-
-MapEntity::~MapEntity() {
-    cout << "Map entity destroyed" << endl;
 }
 
 void MapEntity::update(float deltaTime, Player& player, RenderWindow& window, bool& gameFinished) {

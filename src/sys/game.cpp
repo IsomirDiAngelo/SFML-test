@@ -1,11 +1,22 @@
 #include "game.h"
 
+string precision(float number, int n) {
+    int decimalPart = (number * pow(10, n)) - ((int)number * pow(10, n));
+    int numberPart = (int)number;
+
+    string numberString = numberPart >= 10 ? to_string(numberPart) : "0" + to_string(numberPart);
+    string decimalString = decimalPart >= 10 ? to_string(decimalPart) : "0" + to_string(decimalPart);
+    return numberString + "." + decimalString;
+}
+
 Game::Game(Player& player, Camera& camera, Level& level) 
     : player(player), camera(camera), level(level), fpsDisplay(GAME_FONT), timerDisplay(GAME_FONT) {
     pauseMenu = PauseMenu();
     fpsDisplay = Text(GAME_FONT);
     fpsDisplay.setPosition({SCREEN_RESOLUTION.x - 120, 0});
     timerDisplay = Text(GAME_FONT);
+    timerDisplay.setOutlineColor(Color::Black);
+    timerDisplay.setOutlineThickness(1);
 }
 
 void Game::run(float deltaTime, Clock& globalClock, RenderWindow& window, Input& input) {
@@ -31,8 +42,10 @@ void Game::run(float deltaTime, Clock& globalClock, RenderWindow& window, Input&
             window.draw(level.entities[i]->getSprite());
             level.entities[i]->update(deltaTime, player, window, gameFinished);
         }
+        timerDisplay.setString(precision(globalClock.getElapsedTime().asSeconds(), 3));
     } else {
         globalClock.stop();
+        timerDisplay.setString("GG! " + precision(globalClock.getElapsedTime().asSeconds(), 3));
         timerDisplay.setCharacterSize(50);
         timerDisplay.setOrigin(timerDisplay.getLocalBounds().getCenter());
         timerDisplay.setPosition({SCREEN_RESOLUTION.x / 2, SCREEN_RESOLUTION.y / 2});
@@ -51,7 +64,6 @@ void Game::run(float deltaTime, Clock& globalClock, RenderWindow& window, Input&
     // Draw UI
 
     window.setView(window.getDefaultView());
-    timerDisplay.setString(to_string(globalClock.getElapsedTime().asSeconds()));
     window.draw(timerDisplay);
 
     if (DEBUG || Keyboard::isKeyPressed(Keyboard::Key::F1)) {

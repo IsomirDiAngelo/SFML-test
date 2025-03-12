@@ -11,7 +11,7 @@ class Player;
 
 enum class MapEntityType { _NULL, TUTORIAL_ARROW, SACRED_FRUIT };
 
-// I should have written an entity super class to prevent code duplication with Player class and two subclasses for tutorial arrow and sacred fruit
+// I should have written an Entity super class to prevent code duplication with Player class and two subclasses for tutorial arrow and sacred fruit
 
 class MapEntity {
 
@@ -30,7 +30,6 @@ class MapEntity {
     public:
         MapEntity(MapEntityType type, Vector2f spawnPosition);
         MapEntity(MapEntityType type, Vector2f spawnPosition, string tutorialText);
-        ~MapEntity();
         void update(float deltaTime, Player& player, RenderWindow& window, bool& gameFinished);
         void animate(float deltaTime);
         Sprite& getSprite();

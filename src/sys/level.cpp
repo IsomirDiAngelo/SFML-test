@@ -103,10 +103,8 @@ Level::Level(string levelFilename, string tilesetFilename) {
                 if (x == 0) {
                     if (!stringValue.compare("TA")) {
                         met = MapEntityType::TUTORIAL_ARROW;
-                        cout << "TAH" << endl;
                     } else if (!stringValue.compare("SF")) {
                         met = MapEntityType::SACRED_FRUIT;
-                        cout << "SF" << endl;
                     }
                 } else if (x == 1) {
                     int value = stoi(stringValue);

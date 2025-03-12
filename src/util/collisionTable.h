@@ -19,13 +19,14 @@ static std::unordered_map<int, bool> collisionTable = {
     {431, true}, {432, true}, {433, true}, {436, true}, {437, true}, {438, true},
     {451, true}, {452, true}, {453, true}, {454, true}, {455, true},
     {477, true}, {478, true}, {479, true},
+    {621, true}, {622, true}, {623, true}, {624, true}
 };
 
 static std::unordered_map<int, bool> dangerTable = {
     {211, true}, {59, true}, {60, true}
 };
 
-static std::set<int> leavesTiles = {377, 378, 379, 401, 402, 404, 405, 426, 430, 451, 452, 454, 455, 477, 478, 479};
+static std::set<int> leavesTiles = {377, 378, 379, 401, 402, 404, 405, 426, 430, 451, 452, 454, 455, 477, 478, 479, 621, 622, 623, 624};
 
 static std::set<int> branchesTiles = {431, 432, 433, 436, 437, 438};
 
