@@ -1,6 +1,8 @@
 # SFML-test
 
-Small game developed in C++ using the SFML library in order to learn how to develop a basic game engine of a 2D platformer. 
+Small game developed in C++ using the SFML library in order to learn how to develop basic game mechanics of a 2D platformer.
+First attempt at structuring a game, the code is a bit messy.
+
 
 ![](assets/readme/welcomegif.gif)
 
